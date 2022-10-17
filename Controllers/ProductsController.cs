@@ -1,4 +1,10 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using store_api.Model;
 using store_api.Services;
 
@@ -14,7 +20,9 @@ namespace store_api.Controllers
             _productService = productService;
         }
 
+
         [HttpGet]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "admin")]
         public IActionResult GetProducts([FromQuery] int? page)
         {
             if (page is null)
@@ -41,7 +49,8 @@ namespace store_api.Controllers
         }
 
         [HttpPut]
-        public IActionResult UpdateProduct([FromBody] Product p) {
+        public IActionResult UpdateProduct([FromBody] Product p)
+        {
             _productService.UpdateProduct(p);
             return Ok("updated");
         }

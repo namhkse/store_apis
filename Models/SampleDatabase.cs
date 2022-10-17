@@ -23,5 +23,11 @@ namespace store_api.Model
             new Product() {Id = 12, Description = "Iphone", Price = 100},
             new Product() {Id = 13, Description = "Iphone", Price = 100}
         };
+
+        public static List<Account> Accounts = new List<Account>() {
+            new Account() {Id = 1, UserName="manager", Password = "password",Role = Role.Manager},
+            new Account() {Id = 2, UserName="admin", Password = "password",Role = Role.Admin},
+            new Account() {Id = 3, UserName="customer", Password = "password", Role =Role.Customer}
+        };
     }
 }
