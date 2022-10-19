@@ -1,11 +1,8 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
-using store_api.Model;
+using store_api.Models;
 using store_api.Services;
 
 namespace store_api.Controllers
@@ -21,8 +18,28 @@ namespace store_api.Controllers
         }
 
 
+        [HttpGet("test")]
+        public IActionResult Test()
+        {
+            // System.Console.WriteLine("-------------------------------");
+            var claims = new List<object>();
+            foreach (var e in User.Claims)
+            {
+                claims.Add(new
+                {
+                    Type = e.Type,
+                    ValueType = e.ValueType,
+                    Value = e.Value,
+                    Issuer = e.Issuer,
+                });
+            }
+            //     System.Console.WriteLine($"{e.Type} : {e.ValueType} - {e.Value}");
+            // System.Console.WriteLine("-------------------------------");
+            return Ok(claims);
+        }
+
         [HttpGet]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "admin")]
+        [AllowAnonymous]
         public IActionResult GetProducts([FromQuery] int? page)
         {
             if (page is null)
@@ -49,24 +66,35 @@ namespace store_api.Controllers
         }
 
         [HttpPut]
+        [Authorize("AdminPolicy")]
         public IActionResult UpdateProduct([FromBody] Product p)
         {
             _productService.UpdateProduct(p);
-            return Ok("updated");
+            return Ok(p);
         }
 
         [HttpPost]
+        [Authorize("AdminPolicy")]
         public IActionResult CreateProduct([FromBody] Product p)
         {
             _productService.InsertProduct(p);
-            return Ok("created");
+            return Ok(p);
         }
 
         [HttpDelete("{id}")]
+        [Authorize("AdminPolicy")]
         public IActionResult DeleteProduct([FromRoute] int id)
         {
             _productService.DeleteProduct(id);
             return NoContent();
         }
+
+        [HttpGet("bestselling/{limit}")]
+        public IActionResult GetBestSelling([FromRoute] int limit)
+        {
+            var products = _productService.FindTopSoldProduct(limit);
+            return Ok(products);
+        }
+
     }
 }

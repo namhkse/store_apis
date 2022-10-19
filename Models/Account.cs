@@ -1,9 +1,12 @@
-namespace store_api.Model
+﻿using System;
+using System.Collections.Generic;
+
+namespace store_api.Models
 {
-    public class Account
+    public partial class Account
     {
-        public int Id { get; set; }
-        public string UserName { get; set; }
+        public int AccountId { get; set; }
+        public string Username { get; set; }
         public string Password { get; set; }
         public Role Role { get; set; }
     }

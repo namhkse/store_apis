@@ -1,4 +1,4 @@
-using store_api.Model;
+using store_api.Models;
 
 namespace store_api.Services
 {
@@ -6,5 +6,6 @@ namespace store_api.Services
     {
         public Account FindAccount(int id);
         public Account FindAccount(string username, string password);
+        public List<Account> GetAccounts();
     }
 }

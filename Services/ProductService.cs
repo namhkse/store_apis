@@ -1,60 +1,85 @@
-using store_api.Model;
+using Microsoft.EntityFrameworkCore;
+using store_api.Models;
+using store_api.Utils;
 
 namespace store_api.Services
 {
     public class ProductService : IProductService
     {
+        private readonly NorthwindContext _context;
+
+        public ProductService(NorthwindContext context)
+        {
+            _context = context;
+        }
+
         public void DeleteProduct(int id)
         {
-            SampleDatabase.Products.RemoveAll(p => p.Id == id);
+            var p = new Product();
+            p.ProductId = id;
+            _context.Products.Remove(p);
+            _context.SaveChanges();
         }
 
         public Product FindProduct(int id)
         {
-            return SampleDatabase.Products.Find(p => p.Id == id);
+            return _context.Products
+                .Include(p => p.Category)
+                .Include(p => p.Supplier)
+                .FirstOrDefault(p => p.ProductId == id);
+        }
+
+        public List<Product> FindTopSoldProduct(int top)
+        {
+            var ids = _context.OrderDetails
+                        .GroupBy(o => o.ProductId)
+                        .Select(g => new
+                        {
+                            Id = g.Key,
+                            Count = g.Count()
+                        })
+                        .OrderByDescending(e => e.Count)
+                        .Select(a => a.Id)
+                        .Take(top).ToList();
+
+            var products = _context.Products.Where(p => ids.Contains(p.ProductId)).ToList();
+
+            return products;
         }
 
         public List<Product> GetProducts()
         {
-            return SampleDatabase.Products;
+            return _context.Products.ToList();
         }
 
-        public List<Product> GetProductsWithPaging(int page = 1, int pageSize = 2)
+        public List<Product> GetProductsWithPaging(int page, int pageSize)
         {
-            page = (page <= 0) ? 1 : page;
-            int left = (page - 1) * pageSize;
-            int numberOfProduct = SampleDatabase.Products.Count;
-            int totalPage = SampleDatabase.Products.Count / pageSize + 1;
+            // page = (page <= 0) ? 1 : page;
+            // int left = (page - 1) * pageSize;
+            // int numberOfProduct = _context.Products.Count();
+            // int totalPage = numberOfProduct / pageSize + 1;
 
-            if (page > totalPage) return null;
+            // if (page > totalPage) return null;
 
-            if ((left + pageSize) > numberOfProduct)
-            {
-                pageSize = numberOfProduct - left;
-            }
+            // if ((left + pageSize) > numberOfProduct)
+            // {
+            //     pageSize = numberOfProduct - left;
+            // }
 
-            return SampleDatabase.Products.GetRange(left, pageSize);
+            return Pagination<Product>.Paginate(_context.Products, page, pageSize).ToList();
         }
 
-        public Product InsertProduct(Product p)
+        public void InsertProduct(Product p)
         {
-            p.Id = SampleDatabase.GenerateProductId();
-            SampleDatabase.Products.Add(p);
-            return p;
+            p.ProductId = 0;
+            _context.Products.Add(p);
+            _context.SaveChanges();
         }
 
         public void UpdateProduct(Product product)
         {
-            var p = SampleDatabase.Products.Find(p => p.Id == product.Id);
-            if (p is null)
-            {
-                InsertProduct(product);
-            }
-            else
-            {
-                p.Description = product.Description;
-                p.Price = product.Price;
-            }
+            _context.Update(product);
+            _context.SaveChanges();
         }
     }
 }

@@ -3,36 +3,26 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using store_api.Services;
 using Microsoft.Extensions.Configuration;
-
-
+using store_api.Models;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Database
+builder.Services.AddDbContext<NorthwindContext>(options =>
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DbConnection"));
+});
 
 // Add services to the container.
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ILoginService, LoginSerivce>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
-builder.Services.AddAuthorization();
 builder.Services.AddControllers();
-
-// builder.Services.AddAuthentication(options =>
-// {
-//     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-//     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-//     options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-// }).AddJwtBearer(options =>
-// {
-//     options.TokenValidationParameters = new TokenValidationParameters
-//     {
-//         IssuerSigningKey = new SymmetricSecurityKey (Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
-//         ValidateIssuer = false,
-//         ValidateAudience = false,
-//         ClockSkew = TimeSpan.Zero
-//     };
-// });
 
 builder.Services.AddAuthentication(options =>
 {
@@ -52,14 +42,16 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// builder.Services.AddAuthentication();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminPolicy", policyBuilder => policyBuilder.RequireClaim(JwtClaimTypes.UserRole, "admin"));
+    options.AddPolicy("ManagerPolicy", policyBuilder => policyBuilder.RequireClaim(JwtClaimTypes.UserRole, "manager"));
+    options.AddPolicy("CustomerPolicy", policyBuilder => policyBuilder.RequireClaim(JwtClaimTypes.UserRole, "customer"));
+});
 
-// builder.Services.AddAuthorization(options =>
-// {
-//     options.AddPolicy("AdminPolicy", policyBuilder => policyBuilder.RequireClaim("role", "admin"));
-// });
-
-builder.Services.AddAuthorization();
+builder.Services.AddControllers().AddNewtonsoftJson(options =>
+    options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

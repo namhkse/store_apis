@@ -2,14 +2,15 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
-using store_api.Model;
+using store_api.Models;
 
 namespace store_api.Services
 {
     public class JwtService : IJwtService
     {
         private readonly IAccountService _accountService;
-
+        public const int AccessTokenExpireTimeInMinutes = 1;
+        public const int RefreshTokenExpireTimeInMinutes = 5;
         public JwtService(IAccountService accountService)
         {
             _accountService = accountService;
@@ -21,21 +22,21 @@ namespace store_api.Services
                 issuer: null,
                 audience: null,
                 claims: new Claim[] {
-                    new Claim(JwtRegisteredClaimNames.Name, account.UserName),
-                    new Claim("role", account.Role.ToString().ToLower())
+                    new Claim(JwtClaimTypes.Username, account.Username),
+                    new Claim(JwtClaimTypes.UserRole, account.Role.ToString().ToLower())
                 },
-                expires: DateTime.Now.AddMinutes(1),
-                signingCredentials: new SigningCredentials(new SymmetricSecurityKey(Encoding.ASCII.GetBytes(key)), "HS256")
+                expires: DateTime.UtcNow.AddMinutes(AccessTokenExpireTimeInMinutes),
+                signingCredentials: new SigningCredentials(GenerateSecurityKey(key), "HS256")
             );
 
             var refreshDescriptor = new JwtSecurityToken(
                 issuer: null,
                 audience: null,
                 claims: new Claim[] {
-                new Claim("accountId", account.Id.ToString())
+                    new Claim(JwtClaimTypes.AccountId, account.AccountId.ToString())
                 },
-                expires: DateTime.Now.AddMinutes(5),
-                signingCredentials: new SigningCredentials(new SymmetricSecurityKey(Encoding.ASCII.GetBytes(key)), "HS256")
+                expires: DateTime.UtcNow.AddMinutes(RefreshTokenExpireTimeInMinutes),
+                signingCredentials: new SigningCredentials(GenerateSecurityKey(key), "HS256")
             );
 
             string accessToken = new JwtSecurityTokenHandler().WriteToken(jwtDescriptor);
@@ -48,6 +49,23 @@ namespace store_api.Services
             };
         }
 
+        /// <summary>
+        /// Generate SecurityKey in ASCII Encoding
+        /// </summary>
+        private SecurityKey GenerateSecurityKey(string rawKey)
+        {
+            return new SymmetricSecurityKey(Encoding.ASCII.GetBytes(rawKey));
+        }
+
+        /// <summary>
+        /// Create new JwtResult base on accountId claim in refreshToken.
+        /// </summary>
+        /// <returns>
+        ///  Return new JwtResult or null when fail.
+        /// </returns>
+        /// <remarks>
+        /// Fail: refreshToken is invalid, accountId claim in refreshToken is invalid
+        /// </remarks>
         public JwtResult RefreshToken(string refreshToken, string key)
         {
             var validationParams = new TokenValidationParameters()
@@ -55,7 +73,7 @@ namespace store_api.Services
                 ValidateLifetime = true,
                 ValidateAudience = false,
                 ValidateIssuer = false,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)) // The same key as the one that generate the token
+                IssuerSigningKey = GenerateSecurityKey(key)
             };
 
             var tokenHandler = new JwtSecurityTokenHandler();
@@ -64,9 +82,11 @@ namespace store_api.Services
 
             principal = tokenHandler.ValidateToken(refreshToken, validationParams, out validatedToken);
 
-            var claimAccountId = principal.Claims.Where(c => c.Type.Equals("accountId")).FirstOrDefault();
+            // Get claim accountId in token
+            var claimAccountId = principal.Claims.Where(c => c.Type.Equals(JwtClaimTypes.AccountId)).FirstOrDefault();
             int accountId;
 
+            // Is value of claim accountId is valid. In this case it is an integer
             if (int.TryParse(claimAccountId.Value, out accountId))
             {
                 var account = _accountService.FindAccount(accountId);

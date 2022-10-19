@@ -1,9 +1,9 @@
-namespace store_api.Model
+namespace store_api.Models
 {
     public enum Role
     {
-        Customer,
         Admin,
-        Manager
+        Manager,
+        Customer
     }
 }

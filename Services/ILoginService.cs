@@ -1,4 +1,4 @@
-using store_api.Model;
+using store_api.Models;
 
 namespace store_api.Services {
     public interface ILoginService {
