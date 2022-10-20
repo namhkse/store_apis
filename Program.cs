@@ -5,8 +5,19 @@ using store_api.Services;
 using Microsoft.Extensions.Configuration;
 using store_api.Models;
 using Microsoft.EntityFrameworkCore;
+using store_api.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddDistributedMemoryCache();
+
+// Session
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(10);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
 
 // Database
 builder.Services.AddDbContext<NorthwindContext>(options =>
@@ -14,16 +25,22 @@ builder.Services.AddDbContext<NorthwindContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DbConnection"));
 });
 
-// Add services to the container.
+// DI
+builder.Services.AddScoped(typeof(IBaseService<,>), typeof(BaseService<,>));
+
+builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ILoginService, LoginSerivce>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
+
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
 builder.Services.AddControllers();
 
+// Bearer 
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -65,9 +82,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseAuthentication();
+// app.UseSession();
 
-app.UseAuthorization();
+// app.UseMiddleware<HeaderMiddleware>();
+
+// app.UseAuthentication();
+
+// app.UseAuthorization();
 
 app.MapControllers();
 

@@ -11,6 +11,13 @@ namespace store_api.Services
         private readonly IAccountService _accountService;
         public const int AccessTokenExpireTimeInMinutes = 1;
         public const int RefreshTokenExpireTimeInMinutes = 5;
+
+        public string Key
+        {
+            get => throw new NotImplementedException(); 
+            set => throw new NotImplementedException();
+        }
+
         public JwtService(IAccountService accountService)
         {
             _accountService = accountService;
@@ -23,7 +30,7 @@ namespace store_api.Services
                 audience: null,
                 claims: new Claim[] {
                     new Claim(JwtClaimTypes.Username, account.Username),
-                    new Claim(JwtClaimTypes.UserRole, account.Role.ToString().ToLower())
+                    new Claim(JwtClaimTypes.AccountId, account.AccountId.ToString())
                 },
                 expires: DateTime.UtcNow.AddMinutes(AccessTokenExpireTimeInMinutes),
                 signingCredentials: new SigningCredentials(GenerateSecurityKey(key), "HS256")
@@ -95,6 +102,87 @@ namespace store_api.Services
             }
 
             return null;
+        }
+
+        public TokenWraper GenerateAccessToken(Account account, string key)
+        {
+            var expiredTime = DateTime.UtcNow.AddMinutes(AccessTokenExpireTimeInMinutes);
+
+            var jwtDescriptor = new JwtSecurityToken(
+                issuer: null,
+                audience: null,
+                claims: new Claim[] {
+                    new Claim(JwtClaimTypes.AccountId, account.AccountId.ToString()),
+                    new Claim(JwtClaimTypes.UserRole, account.Role.RoleName.ToString())
+                },
+                expires: expiredTime,
+                signingCredentials: new SigningCredentials(GenerateSecurityKey(key), "HS256")
+            );
+
+            string accessToken = new JwtSecurityTokenHandler().WriteToken(jwtDescriptor);
+
+            return new TokenWraper()
+            {
+                Token = accessToken,
+                ExpiredTime = expiredTime
+            };
+        }
+
+        public TokenWraper GenerateRefreshToken(Account account, string key)
+        {
+            var expiredTime = DateTime.UtcNow.AddMinutes(RefreshTokenExpireTimeInMinutes);
+
+            var jwtDescriptor = new JwtSecurityToken(
+                issuer: null,
+                audience: null,
+                claims: new Claim[] {
+                    new Claim(JwtClaimTypes.AccountId, account.AccountId.ToString())
+                },
+                expires: expiredTime,
+                signingCredentials: new SigningCredentials(GenerateSecurityKey(key), "HS256")
+            );
+
+            string accessToken = new JwtSecurityTokenHandler().WriteToken(jwtDescriptor);
+
+            return new TokenWraper()
+            {
+                Token = accessToken,
+                ExpiredTime = expiredTime
+            };
+        }
+
+        public bool CheckValidToken(string token)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool CheckValidToken(string token, string key)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<Claim> ExtractClaims(string token, string key)
+        {
+            var validationParams = new TokenValidationParameters()
+            {
+                ValidateLifetime = true,
+                ValidateAudience = false,
+                ValidateIssuer = false,
+                IssuerSigningKey = GenerateSecurityKey(key)
+            };
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            SecurityToken validatedToken;
+            ClaimsPrincipal principal;
+
+            principal = tokenHandler.ValidateToken(token, validationParams, out validatedToken);
+
+            return principal.Claims;
+        }
+
+        public Claim FindClaim(string token, string key, string claimType)
+        {
+            return ExtractClaims(token, key).FirstOrDefault(c => c.Type.Equals(claimType));
         }
     }
 }

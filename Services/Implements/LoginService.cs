@@ -7,6 +7,7 @@ namespace store_api.Services
         private readonly IConfiguration _config;
         private readonly IJwtService _jwtService;
         private readonly IAccountService _accountService;
+        private readonly ITokenService _tokenService;
 
         public LoginSerivce(IConfiguration config, IJwtService jwtService, IAccountService accountService)
         {
@@ -19,9 +20,9 @@ namespace store_api.Services
         {
             Account account = _accountService.FindAccount(username, password);
 
-            return (account is null)
-                ? null
-                : _jwtService.GenerateJwt(account, _config["Jwt:Key"]);
+            if (account is null) return null;
+
+            return _jwtService.GenerateJwt(account, _config["Jwt:Key"]);
         }
 
         public JwtResult RefreshLoginWithToken(string refreshToken)

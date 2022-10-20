@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using store_api.Models;
 using store_api.Services;
+using store_api.Filters;
 
 namespace store_api.Controllers
 {
@@ -15,27 +16,6 @@ namespace store_api.Controllers
         public ProductsController(IProductService productService)
         {
             _productService = productService;
-        }
-
-
-        [HttpGet("test")]
-        public IActionResult Test()
-        {
-            // System.Console.WriteLine("-------------------------------");
-            var claims = new List<object>();
-            foreach (var e in User.Claims)
-            {
-                claims.Add(new
-                {
-                    Type = e.Type,
-                    ValueType = e.ValueType,
-                    Value = e.Value,
-                    Issuer = e.Issuer,
-                });
-            }
-            //     System.Console.WriteLine($"{e.Type} : {e.ValueType} - {e.Value}");
-            // System.Console.WriteLine("-------------------------------");
-            return Ok(claims);
         }
 
         [HttpGet]
@@ -53,6 +33,7 @@ namespace store_api.Controllers
 
 
         [HttpGet("{id}")]
+        [AllowAnonymous]
         public IActionResult FindProduct([FromRoute] int id)
         {
             var p = _productService.FindProduct(id);
@@ -66,7 +47,6 @@ namespace store_api.Controllers
         }
 
         [HttpPut]
-        [Authorize("AdminPolicy")]
         public IActionResult UpdateProduct([FromBody] Product p)
         {
             _productService.UpdateProduct(p);
@@ -74,7 +54,7 @@ namespace store_api.Controllers
         }
 
         [HttpPost]
-        [Authorize("AdminPolicy")]
+        [RoleAuthorize("admin")]
         public IActionResult CreateProduct([FromBody] Product p)
         {
             _productService.InsertProduct(p);

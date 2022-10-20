@@ -54,18 +54,6 @@ namespace store_api.Services
 
         public List<Product> GetProductsWithPaging(int page, int pageSize)
         {
-            // page = (page <= 0) ? 1 : page;
-            // int left = (page - 1) * pageSize;
-            // int numberOfProduct = _context.Products.Count();
-            // int totalPage = numberOfProduct / pageSize + 1;
-
-            // if (page > totalPage) return null;
-
-            // if ((left + pageSize) > numberOfProduct)
-            // {
-            //     pageSize = numberOfProduct - left;
-            // }
-
             return Pagination<Product>.Paginate(_context.Products, page, pageSize).ToList();
         }
 

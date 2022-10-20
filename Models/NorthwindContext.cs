@@ -37,6 +37,7 @@ namespace store_api.Models
         public virtual DbSet<ProductsByCategory> ProductsByCategories { get; set; }
         public virtual DbSet<QuarterlyOrder> QuarterlyOrders { get; set; }
         public virtual DbSet<Region> Regions { get; set; }
+        public virtual DbSet<Role> Roles { get; set; }
         public virtual DbSet<SalesByCategory> SalesByCategories { get; set; }
         public virtual DbSet<SalesTotalsByAmount> SalesTotalsByAmounts { get; set; }
         public virtual DbSet<Shipper> Shippers { get; set; }
@@ -44,6 +45,7 @@ namespace store_api.Models
         public virtual DbSet<SummaryOfSalesByYear> SummaryOfSalesByYears { get; set; }
         public virtual DbSet<Supplier> Suppliers { get; set; }
         public virtual DbSet<Territory> Territories { get; set; }
+        public virtual DbSet<Token> Tokens { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -53,18 +55,19 @@ namespace store_api.Models
         {
             modelBuilder.Entity<Account>(entity =>
             {
-                entity.HasIndex(e => e.Username, "UQ__Accounts__536C85E47B9BD703")
-                    .IsUnique();
-
                 entity.Property(e => e.Password)
                     .IsRequired()
-                    .HasMaxLength(200)
-                    .IsUnicode(false);
+                    .HasMaxLength(50);
 
                 entity.Property(e => e.Username)
                     .IsRequired()
-                    .HasMaxLength(200)
-                    .IsUnicode(false);
+                    .HasMaxLength(100);
+
+                entity.HasOne(d => d.Role)
+                    .WithMany(p => p.Accounts)
+                    .HasForeignKey(d => d.RoleId)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("FK__Accounts__RoleId__17F790F9");
             });
 
             modelBuilder.Entity<AlphabeticalListOfProduct>(entity =>
@@ -664,6 +667,13 @@ namespace store_api.Models
                     .IsFixedLength();
             });
 
+            modelBuilder.Entity<Role>(entity =>
+            {
+                entity.Property(e => e.RoleName)
+                    .IsRequired()
+                    .HasMaxLength(100);
+            });
+
             modelBuilder.Entity<SalesByCategory>(entity =>
             {
                 entity.HasNoKey();
@@ -791,6 +801,20 @@ namespace store_api.Models
                     .HasForeignKey(d => d.RegionId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Territories_Region");
+            });
+
+            modelBuilder.Entity<Token>(entity =>
+            {
+                entity.HasKey(e => e.SessionId)
+                    .HasName("PK__Tokens__C9F49290F031BC55");
+
+                entity.Property(e => e.SessionId).HasMaxLength(100);
+
+                entity.Property(e => e.AccessToken).HasMaxLength(400);
+
+                entity.Property(e => e.RefreshToken).HasMaxLength(400);
+
+                entity.Property(e => e.RefreshTokenExpiredTime).HasColumnType("datetime");
             });
 
             OnModelCreatingPartial(modelBuilder);
