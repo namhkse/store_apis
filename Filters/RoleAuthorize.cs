@@ -5,6 +5,7 @@ using store_api.Services;
 
 namespace store_api.Filters
 {
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
     public class RoleAuthorize : ActionFilterAttribute
     {
         public bool AllowAnonymous { get; set; }
@@ -16,7 +17,6 @@ namespace store_api.Filters
 
         public override void OnActionExecuting(ActionExecutingContext context)
         {
-            // if (!AllowAnonymous) context.Result = new BadRequestResult();
             var tokenBearer = context.HttpContext.Request.Headers.Authorization;
 
             if (string.IsNullOrEmpty(tokenBearer))

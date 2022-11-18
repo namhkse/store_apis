@@ -82,13 +82,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// app.UseSession();
+app.UseSession();
 
-// app.UseMiddleware<HeaderMiddleware>();
+app.UseMiddleware<HeaderMiddleware>();
 
-// app.UseAuthentication();
+app.UseAuthentication();
 
-// app.UseAuthorization();
+app.UseAuthorization();
 
 app.MapControllers();
 

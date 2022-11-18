@@ -49,6 +49,7 @@ namespace store_api.Models
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
+            // Override database configurations 
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -823,3 +824,4 @@ namespace store_api.Models
         partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
     }
 }
+

@@ -57,10 +57,10 @@ namespace store_api.Services
             return Pagination<Product>.Paginate(_context.Products, page, pageSize).ToList();
         }
 
-        public void InsertProduct(Product p)
+        public void InsertProduct(Product product)
         {
-            p.ProductId = 0;
-            _context.Products.Add(p);
+            product.ProductId = 0;
+            _context.Products.Add(product);
             _context.SaveChanges();
         }
 

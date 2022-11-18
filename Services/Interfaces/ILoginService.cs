@@ -4,7 +4,7 @@ namespace store_api.Services
 {
     public interface ILoginService
     {
-        JwtResult Login(string userName, string password);
+        JwtResult Login(string username, string password);
         JwtResult RefreshLoginWithToken(string refreshToken);
     }
 }
